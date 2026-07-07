@@ -68,4 +68,6 @@ npm run dev
 
 `src/app/manifest.ts` + `public/sw.js` (registered in production builds).
 Installable on mobile and desktop; static assets cached, navigations fall back
-to cache offline. API/Supabase traffic is never intercepted.
+to cache offline. API/Supabase traffic is never intercepted. Icon PNGs are
+generated into `public/icons/` by the dependency-free script at install time
+(`postinstall`), so no binaries live in the repo.
