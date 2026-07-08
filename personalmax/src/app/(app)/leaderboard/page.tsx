@@ -6,6 +6,7 @@ import { Icon } from "@/components/icons";
 import { createClient } from "@/lib/supabase/server";
 import { loadSocialGraph } from "@/lib/social";
 import type { CharacterRow, ProfileRow } from "@/lib/types";
+import { paginationSchema } from "@/lib/validation";
 
 export const metadata: Metadata = { title: "Leaderboard" };
 
@@ -16,7 +17,9 @@ const PAGE_SIZE = 10;
 export default async function LeaderboardPage(props: PageProps<"/leaderboard">) {
   const searchParams = await props.searchParams;
   const rawPage = Array.isArray(searchParams.page) ? searchParams.page[0] : searchParams.page;
-  const page = Math.max(0, Number.parseInt(rawPage ?? "0", 10) || 0);
+  // Validate + clamp the page number (0..10000) via the shared schema.
+  const parsedPage = paginationSchema.safeParse({ page: rawPage ?? "0" });
+  const page = parsedPage.success ? parsedPage.data.page : 0;
 
   const supabase = await createClient();
   const {

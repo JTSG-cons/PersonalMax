@@ -14,6 +14,24 @@ const line = (min: number, max: number) =>
 const text = (max: number) =>
   z.string().trim().max(max).regex(MULTI_LINE, "Contains invalid characters").default("");
 
+// Reasonable logging window: not before 2000, not more than a day in the
+// future (allows for client clock skew / timezones). These bound the dates
+// that feed the server-side streak/XP recompute.
+const EARLIEST_MS = Date.parse("2000-01-01T00:00:00Z");
+const dayAheadMs = () => Date.now() + 24 * 60 * 60 * 1000;
+
+const boundedDateTime = z
+  .iso.datetime({ offset: true })
+  .refine((v) => {
+    const t = Date.parse(v);
+    return t >= EARLIEST_MS && t <= dayAheadMs();
+  }, "Date must be between 2000 and tomorrow");
+
+const boundedDate = z.iso.date().refine((v) => {
+  const t = Date.parse(`${v}T12:00:00Z`);
+  return t >= EARLIEST_MS && t <= dayAheadMs();
+}, "Date must be between 2000 and tomorrow");
+
 export const usernameSchema = z
   .string()
   .trim()
@@ -48,7 +66,7 @@ export const workoutExerciseSchema = z.object({
 export const workoutSessionSchema = z.object({
   title: line(1, 80),
   notes: text(1000),
-  performedAt: z.iso.datetime({ offset: true }),
+  performedAt: boundedDateTime,
   durationMinutes: z.int().min(0).max(1440).nullish(),
   exercises: z.array(workoutExerciseSchema).min(1).max(20),
 });
@@ -84,7 +102,7 @@ export const mealSchema = z.object({
   proteinG: z.int().min(0).max(1000),
   carbsG: z.int().min(0).max(1000),
   fatG: z.int().min(0).max(1000),
-  eatenOn: z.iso.date(),
+  eatenOn: boundedDate,
 });
 
 // --- character / social ---------------------------------------------------------

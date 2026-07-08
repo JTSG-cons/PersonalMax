@@ -35,7 +35,11 @@ export function rateLimit(key: string, limit: number, windowMs: number): boolean
 }
 
 export const LIMITS = {
+  // Per-IP cap (spoofable without a trusted proxy — see clientIp).
   auth: { limit: 10, windowMs: 15 * 60 * 1000 },
+  // Per-account cap: throttles brute force against a single email even when
+  // the attacker rotates the X-Forwarded-For header.
+  authAccount: { limit: 6, windowMs: 15 * 60 * 1000 },
   battle: { limit: 10, windowMs: 60 * 60 * 1000 },
   write: { limit: 120, windowMs: 60 * 1000 },
 } as const;

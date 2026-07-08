@@ -12,6 +12,17 @@ export async function POST(request: Request) {
   const { data, error } = await parseBody(request, loginSchema);
   if (error) return error;
 
+  // Per-account throttle: blocks single-account brute force regardless of IP.
+  if (
+    !rateLimit(
+      `auth:acct:${data.email.toLowerCase()}`,
+      LIMITS.authAccount.limit,
+      LIMITS.authAccount.windowMs,
+    )
+  ) {
+    return jsonError("Too many attempts. Try again later.", 429);
+  }
+
   const supabase = await createClient();
   const { error: signInError } = await supabase.auth.signInWithPassword({
     email: data.email,

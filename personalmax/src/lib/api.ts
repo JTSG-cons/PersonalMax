@@ -48,7 +48,15 @@ export async function parseBody<S extends z.ZodType>(
   return { data: result.data, error: null };
 }
 
+// Best-effort client IP for rate limiting. Prefer `x-real-ip` (set, not
+// appended, by a trusted reverse proxy) over the first `x-forwarded-for` hop,
+// which is fully client-controlled. This value is spoofable when the app is
+// not deployed behind a proxy that overwrites these headers, so IP-based auth
+// limiting is layered with per-account limiting (see the auth routes) and
+// Supabase Auth's own server-side limits — never rely on it alone.
 export function clientIp(request: Request): string {
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
   const forwarded = request.headers.get("x-forwarded-for");
   return forwarded?.split(",")[0]?.trim() || "unknown";
 }

@@ -12,6 +12,17 @@ export async function POST(request: Request) {
   const { data, error } = await parseBody(request, signupSchema);
   if (error) return error;
 
+  // Per-account throttle in addition to the per-IP limit above.
+  if (
+    !rateLimit(
+      `auth:acct:${data.email.toLowerCase()}`,
+      LIMITS.authAccount.limit,
+      LIMITS.authAccount.windowMs,
+    )
+  ) {
+    return jsonError("Too many attempts. Try again later.", 429);
+  }
+
   const supabase = await createClient();
   const { data: result, error: signUpError } = await supabase.auth.signUp({
     email: data.email,

@@ -25,8 +25,8 @@
 | Server-computed game state | `compute_progress`, `rpc_resolve_battle` (SECURITY DEFINER); clients hold zero write grants on `characters` (except the `name` column), `battles`, `user_awards` |
 | IDOR protection | Route handlers scope every query with `.eq("user_id", user.id)` *and* RLS enforces the same predicate independently; friendship RPCs re-check `auth.uid()` inside SQL |
 | Secrets | `.env.example` committed; `.env.local` gitignored; no secret-class values exist |
-| Rate limiting | Auth: per-IP sliding window (plus Supabase Auth's own limits). Battles: per-user in-memory window **and** an authoritative in-database count (10/hour) inside `rpc_resolve_battle`. General writes: 120/min/user |
-| XSS | React auto-escaping only — `dangerouslySetInnerHTML` is not used; inputs strip control characters and enforce length caps; CSP + `X-Frame-Options: DENY` + `nosniff` headers in `next.config.ts` |
+| Rate limiting | Auth: per-IP **and** per-account sliding windows (so rotating `X-Forwarded-For` cannot brute-force a single account), plus Supabase Auth's own limits. Battles: per-user in-memory window **and** an authoritative in-database count (10/hour) inside `rpc_resolve_battle`. General writes: 120/min/user |
+| XSS | React auto-escaping only — `dangerouslySetInnerHTML` is not used; inputs strip control characters and enforce length caps at **both** the app layer (zod) and the database layer (CHECK constraints in migration `…000005_defense_in_depth.sql`), so a direct PostgREST caller cannot bypass them; CSP + `X-Frame-Options: DENY` + `nosniff` headers in `next.config.ts` |
 | Dependency hygiene | `npm audit` clean of high/critical findings |
 
 ## Notes and trade-offs
@@ -36,6 +36,11 @@
   protected by Supabase's own service-side limits. If you deploy many
   instances and want strict global limits on general writes too, add a
   Postgres- or Redis-backed counter.
+- **Client IP for rate limiting** (`clientIp` in `src/lib/api.ts`) prefers
+  `x-real-ip` then the first `x-forwarded-for` hop. Both are spoofable unless
+  the app runs behind a proxy that overwrites them, so the auth limiter is
+  layered with a per-account limit (keyed on the target email) that throttles
+  single-account brute force regardless of source IP.
 - **CSP allows `'unsafe-inline'` scripts** because Next.js injects inline
   bootstrap scripts; tightening to nonces is possible with a custom proxy
   step if required.

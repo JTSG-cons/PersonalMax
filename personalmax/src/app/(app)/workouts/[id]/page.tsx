@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { z } from "zod";
 import { PageTitle } from "@/components/ui";
 import { WorkoutEditor, type WorkoutDraft } from "@/components/workout-editor";
 import { createClient } from "@/lib/supabase/server";
@@ -8,11 +9,15 @@ import type { WorkoutSessionRow } from "@/lib/types";
 export const metadata: Metadata = { title: "Edit workout" };
 
 // RLS restricts this query to the caller's own sessions: a guessed or foreign
-// ID returns no rows and 404s.
+// ID returns no rows and 404s. The id is validated as a UUID first so a
+// malformed value 404s cleanly instead of erroring against PostgREST.
 export default async function WorkoutDetailPage(
   props: PageProps<"/workouts/[id]">,
 ) {
-  const { id } = await props.params;
+  const { id: rawId } = await props.params;
+  const parsedId = z.uuid().safeParse(rawId);
+  if (!parsedId.success) notFound();
+  const id = parsedId.data;
   const supabase = await createClient();
 
   const { data } = await supabase
