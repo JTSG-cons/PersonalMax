@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+/* PersonalMax visual system: committed dark "iron & arcana" look.
+   Tokens are consumed as Tailwind utilities (bg-bg, text-ink, border-edge…). */
+@theme {
+  --color-bg: #0b0a12;
+  --color-surface: #14121f;
+  --color-raised: #1d1a2e;
+  --color-edge: #2a2545;
+  --color-ink: #ece9f8;
+  --color-muted: #9b93bd;
+  --color-accent: #8b5cf6;
+  --color-accent-soft: #a78bfa;
+  --color-gold: #fbbf24;
+  --color-danger: #f87171;
+  --color-win: #34d399;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Subtle arena-floor texture behind everything */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(139, 92, 246, 0.12), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, rgba(251, 191, 36, 0.05), transparent 60%);
+}
