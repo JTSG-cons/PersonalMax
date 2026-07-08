@@ -71,3 +71,19 @@ Installable on mobile and desktop; static assets cached, navigations fall back
 to cache offline. API/Supabase traffic is never intercepted. Icon PNGs are
 generated into `public/icons/` by the dependency-free script at install time
 (`postinstall`), so no binaries live in the repo.
+
+## Deploying to Vercel
+
+The app lives in this `personalmax/` subdirectory, so when importing the repo:
+
+1. **Root Directory** must be set to `personalmax` (Vercel → Settings → Build
+   and Deployment). With it unset, Vercel builds the repo root — which has no
+   `package.json` — and every route returns a platform `404 NOT_FOUND`.
+2. Add the two build-time environment variables (both are public/browser-safe;
+   Row Level Security is the real boundary):
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+3. Redeploy after changing either of the above — settings changes do not
+   rebuild on their own.
+4. In Supabase → Authentication → URL Configuration, set the Site URL and add
+   the deployed origin to the redirect allowlist so auth emails link correctly.
